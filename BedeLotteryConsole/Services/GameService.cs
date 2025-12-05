@@ -30,7 +30,8 @@ public class GameService : IGameService
         _lottoSettings = lottoSettings.Value;
     }
 
-    public CancellationToken AppCancellationToken { get; private set; } = new CancellationToken();
+    private CancellationTokenSource _cancellationTokenSource { get; set; } = new CancellationTokenSource();
+    public CancellationToken AppCancellationToken => _cancellationTokenSource.Token;
 
     public async Task InitializeAsync()
     {
@@ -131,7 +132,7 @@ public class GameService : IGameService
             }
             else if (input is ExitCommand)
             {
-                AppCancellationToken = new CancellationToken(true);
+                _cancellationTokenSource.Cancel();
             }
         }
         catch (Exception ex)

@@ -40,7 +40,7 @@ public class Program
 
         while (!gameService.AppCancellationToken.IsCancellationRequested)
         {
-            await Task.Delay(100);
+            await Task.Delay(1_000, gameService.AppCancellationToken);
         }
     }
 }
