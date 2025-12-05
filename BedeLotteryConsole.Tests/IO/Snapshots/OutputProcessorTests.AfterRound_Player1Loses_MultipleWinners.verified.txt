@@ -1,0 +1,23 @@
+﻿Welcome to the Bede Lottery, Player1!
+
+* Your digital balance: $5.00
+* Ticket Price: $1.00 each
+
+
+0 other CPU players also have purchased tickets.
+
+Ticket Draw Results:
+
+* Grand Prize: Player 8(5) wins $72.00!
+* Second Tier: Players 3(3), 6(2), 11(1) win $10.00 per winning ticket!
+* Third Tier: Players 2(2), 4(1), 9(3) win $3.00 per winning ticket!
+
+Congratulations to the winners!
+
+House Profit: $45.00
+
+
+
+Would you like to play again? y/n
+
+
