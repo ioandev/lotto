@@ -24,7 +24,7 @@ internal class WinnersService : IWinnersService
         }
 
         var ticketsPerPlayers = GetTicketsPerPlayersRandom(input, random);
-        var ticketsAndPlayers = GetTicketsForPlayers(ticketsPerPlayers, random);
+        var ticketsAndPlayers = GetTicketsForPlayers(ticketsPerPlayers);
 
         if (ticketsAndPlayers.Count < MinTicketsRequired)
         {
@@ -129,7 +129,7 @@ internal class WinnersService : IWinnersService
         return ticketsPerPlayers;
     }
 
-    private List<(int TicketId, int PlayerId)> GetTicketsForPlayers(Dictionary<int, int> ticketsPerPlayers, Random random)
+    private List<(int TicketId, int PlayerId)> GetTicketsForPlayers(Dictionary<int, int> ticketsPerPlayers)
     {
         var ticketId = 1;
         return ticketsPerPlayers.SelectMany(x =>
