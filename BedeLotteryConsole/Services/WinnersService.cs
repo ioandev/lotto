@@ -1,21 +1,29 @@
 
 using BedeLotteryConsole.Settings;
 using BedeLotteryConsole.Models;
+using BedeLotteryConsole.Services.Interfaces;
+using Microsoft.Extensions.Options;
 
 namespace BedeLotteryConsole.Algos;
 
-internal static class Winners
+internal class WinnersService : IWinnersService
 {
     public const int MinTicketsRequired = 10;
+    private readonly LottoSettings _lottoSettings;
 
-    public static WinnersOutput? CalculateWinners(WinnersInput input, LottoSettings lottoSettings, Random random)
+    public WinnersService(IOptions<LottoSettings> lottoSettings)
+    {
+        _lottoSettings = lottoSettings.Value;
+    }
+
+    public WinnersOutput? CalculateWinners(WinnersInput input, Random random)
     {
         if (input is null)
         {
             throw new ArgumentNullException(nameof(input));
         }
 
-        var ticketsPerPlayers = GetTicketsPerPlayersRandom(input, lottoSettings, random);
+        var ticketsPerPlayers = GetTicketsPerPlayersRandom(input, random);
         var ticketsAndPlayers = GetTicketsForPlayers(ticketsPerPlayers, random);
 
         if (ticketsAndPlayers.Count < MinTicketsRequired)
@@ -25,7 +33,7 @@ internal static class Winners
 
         var (grandPrizeTicket, secondTierTickets, thirdTierTickets) = DrawWinners(random, ticketsAndPlayers.Count);
 
-        var totalPoolAmount = ticketsAndPlayers.Count * lottoSettings.TicketPrice;
+        var totalPoolAmount = ticketsAndPlayers.Count * _lottoSettings.TicketPrice;
         var totalGrandPrize = totalPoolAmount * 0.5m; // 50% of revenue
         var totalSecondTierPrize = totalPoolAmount * 0.3m; // 30% of revenue
         var totalThirdTierPrize = totalPoolAmount * 0.1m; // 10% of revenue
@@ -64,7 +72,7 @@ internal static class Winners
         {
             PlayerBalances = input.PlayerBalances.ToDictionary(x => x.Key, x =>
                 x.Value
-                - (ticketsPerPlayers[x.Key] * lottoSettings.TicketPrice)
+                - (ticketsPerPlayers[x.Key] * _lottoSettings.TicketPrice)
                 + (winnerAmountsBalance.ContainsKey(x.Key) ? winnerAmountsBalance[x.Key] : 0m)
             ),
             CPUPlayersTicketsCount = ticketsPerPlayers
@@ -77,7 +85,7 @@ internal static class Winners
         };
     }
     
-    internal static (int, int[], int[]) DrawWinners(Random rng, int totalTickets)
+    public (int, int[], int[]) DrawWinners(Random rng, int totalTickets)
     {
         int[] ticketPool = Enumerable.Range(1, totalTickets).ToArray();
 
@@ -100,19 +108,19 @@ internal static class Winners
     }
 
     // Automatically generated for CPU players (random)
-    private static Dictionary<int, int> GetTicketsPerPlayersRandom(WinnersInput input, LottoSettings lottoSettings, Random random)
+    private Dictionary<int, int> GetTicketsPerPlayersRandom(WinnersInput input, Random random)
     {
         var ticketsPerPlayers = 
             Enumerable.Range(2, input.PlayerBalances.Count - 1)
                 .Select(playerId => {
                     var playerBalance = input.PlayerBalances[playerId];
-                    var maxBettableTicketsAccordingToCurrentBalance = (int)(playerBalance / lottoSettings.TicketPrice);
+                    var maxBettableTicketsAccordingToCurrentBalance = (int)(playerBalance / _lottoSettings.TicketPrice);
                     if (maxBettableTicketsAccordingToCurrentBalance < 1)
                     {
                         return (PlayerId: playerId, Tickets: 0);
                     }
 
-                    var maxTicketsForThisPlayer = Math.Min(maxBettableTicketsAccordingToCurrentBalance, lottoSettings.MaxTicketsPerPlayers);
+                    var maxTicketsForThisPlayer = Math.Min(maxBettableTicketsAccordingToCurrentBalance, _lottoSettings.MaxTicketsPerPlayers);
                     return (PlayerId: playerId, Tickets: random.Next(1, maxTicketsForThisPlayer + 1));
                 })
                 .ToDictionary(x => x.PlayerId, x => x.Tickets);
@@ -121,7 +129,7 @@ internal static class Winners
         return ticketsPerPlayers;
     }
 
-    private static List<(int TicketId, int PlayerId)> GetTicketsForPlayers(Dictionary<int, int> ticketsPerPlayers, Random random)
+    private List<(int TicketId, int PlayerId)> GetTicketsForPlayers(Dictionary<int, int> ticketsPerPlayers, Random random)
     {
         var ticketId = 1;
         return ticketsPerPlayers.SelectMany(x =>
@@ -135,7 +143,7 @@ internal static class Winners
         }).ToList();
     }
 
-    private static List<(int PlayerId, decimal AmountTotal, int grandPrizeTicket, int secondTierPrizes, int thirdTierPrizes)> GetWinnerAmounts(
+    private List<(int PlayerId, decimal AmountTotal, int grandPrizeTicket, int secondTierPrizes, int thirdTierPrizes)> GetWinnerAmounts(
         List<(int TicketId, int PlayerId)> ticketsAndPlayers,
         int grandPrizeTicket,
         int[] secondTierTickets,

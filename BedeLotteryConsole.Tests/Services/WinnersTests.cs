@@ -1,13 +1,15 @@
 using BedeLotteryConsole.Algos;
 using BedeLotteryConsole.Models;
 using BedeLotteryConsole.Settings;
+using BedeLotteryConsole.Services.Interfaces;
 
-namespace BedeLotteryConsole.Tests.Algos;
+namespace BedeLotteryConsole.Tests.Services;
 
 [TestFixture]
 public class WinnersTests
 {
     private LottoSettings _defaultSettings;
+    private IWinnersService _winnersService;
 
     [SetUp]
     public void SetUp()
@@ -19,6 +21,8 @@ public class WinnersTests
             MaxTicketsPerPlayers = 50,
             MaxPlayersPerGame = 15
         };
+        
+        _winnersService = new WinnersService(Microsoft.Extensions.Options.Options.Create(_defaultSettings));
     }
 
     [Test]
@@ -28,7 +32,7 @@ public class WinnersTests
         var random = new Random(111);
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => Winners.CalculateWinners(null!, _defaultSettings, random));
+        Assert.Throws<ArgumentNullException>(() => _winnersService.CalculateWinners(null!, random));
     }
 
     [Test]
@@ -52,7 +56,7 @@ public class WinnersTests
         };
 
         // Act
-        var result = Winners.CalculateWinners(input, _defaultSettings, random);
+        var result = _winnersService.CalculateWinners(input, random);
 
         // Assert
         Assert.That(result, Is.Not.Null, "CalculateWinners should return a result with enough tickets");
@@ -100,7 +104,7 @@ public class WinnersTests
         };
 
         // Act
-        var result = Winners.CalculateWinners(input, _defaultSettings, random);
+        var result = _winnersService.CalculateWinners(input, random);
 
         // Assert - All CPU players should have their balances updated
         Assert.That(result, Is.Not.Null, "CalculateWinners should return a result with enough tickets");
@@ -141,7 +145,7 @@ public class WinnersTests
         };
 
         // Act
-        var result = Winners.CalculateWinners(input, _defaultSettings, random);
+        var result = _winnersService.CalculateWinners(input, random);
 
         // Assert
         Assert.That(result, Is.Not.Null);
@@ -179,7 +183,7 @@ public class WinnersTests
         };
 
         // Act
-        var result = Winners.CalculateWinners(input, _defaultSettings, random);
+        var result = _winnersService.CalculateWinners(input, random);
 
         // Assert - There should be at most 1 grand prize winner
         Assert.That(result, Is.Not.Null);
@@ -209,8 +213,8 @@ public class WinnersTests
         };
 
         // Act - Run twice with same seed
-        var result1 = Winners.CalculateWinners(input, _defaultSettings, new Random(111));
-        var result2 = Winners.CalculateWinners(input, _defaultSettings, new Random(111));
+        var result1 = _winnersService.CalculateWinners(input, new Random(111));
+        var result2 = _winnersService.CalculateWinners(input, new Random(111));
 
         // Assert - Results should be identical
         Assert.That(result1, Is.Not.Null);
@@ -245,7 +249,7 @@ public class WinnersTests
         };
 
         // Act
-        var result = Winners.CalculateWinners(input, _defaultSettings, random);
+        var result = _winnersService.CalculateWinners(input, random);
 
         // Assert - Player 1 balance should be unchanged (they didn't participate)
         Assert.That(result, Is.Not.Null);
@@ -273,7 +277,7 @@ public class WinnersTests
         };
 
         // Act
-        var result = Winners.CalculateWinners(input, _defaultSettings, random);
+        var result = _winnersService.CalculateWinners(input, random);
 
         // Assert
         Assert.That(result, Is.Not.Null);
@@ -316,7 +320,7 @@ public class WinnersTests
         };
 
         // Act
-        var result = Winners.CalculateWinners(input, _defaultSettings, random);
+        var result = _winnersService.CalculateWinners(input, random);
 
         // Assert - No CPU player should go into negative balance
         Assert.That(result, Is.Not.Null);
@@ -335,7 +339,7 @@ public class WinnersTests
         var rng = new Random(seed);
 
         // Act
-        var (grandPrize, secondTier, thirdTier) = Winners.DrawWinners(rng, totalTickets);
+        var (grandPrize, secondTier, thirdTier) = _winnersService.DrawWinners(rng, totalTickets);
 
         // Assert - These exact values should be returned every time with seed 111
         // With 100 tickets: 10% = 10 tickets for second tier, 20% = 20 tickets for third tier
@@ -352,8 +356,8 @@ public class WinnersTests
         const int totalTickets = 100;
 
         // Act - Run twice with same seed
-        var result1 = Winners.DrawWinners(new Random(seed), totalTickets);
-        var result2 = Winners.DrawWinners(new Random(seed), totalTickets);
+        var result1 = _winnersService.DrawWinners(new Random(seed), totalTickets);
+        var result2 = _winnersService.DrawWinners(new Random(seed), totalTickets);
 
         // Assert - Both calls should produce identical results
         Assert.That(result1.Item1, Is.EqualTo(result2.Item1), "Grand prize tickets should match");
@@ -369,7 +373,7 @@ public class WinnersTests
         const int totalTickets = 100;
 
         // Act
-        var (grandPrize, secondTier, thirdTier) = Winners.DrawWinners(rng, totalTickets);
+        var (grandPrize, secondTier, thirdTier) = _winnersService.DrawWinners(rng, totalTickets);
 
         // Assert - 10% of 100 = 10, 20% of 100 = 20
         Assert.That(secondTier.Length, Is.EqualTo(10), "Should have 10 second tier winners (10% of 100)");
@@ -384,7 +388,7 @@ public class WinnersTests
         const int totalTickets = 100;
 
         // Act
-        var (grandPrize, secondTier, thirdTier) = Winners.DrawWinners(rng, totalTickets);
+        var (grandPrize, secondTier, thirdTier) = _winnersService.DrawWinners(rng, totalTickets);
 
         // Assert - Combine all winning tickets
         var allWinners = new List<int> { grandPrize };
@@ -402,7 +406,7 @@ public class WinnersTests
         const int totalTickets = 100;
 
         // Act
-        var (grandPrize, secondTier, thirdTier) = Winners.DrawWinners(rng, totalTickets);
+        var (grandPrize, secondTier, thirdTier) = _winnersService.DrawWinners(rng, totalTickets);
 
         // Assert
         Assert.That(grandPrize, Is.InRange(1, totalTickets));
@@ -425,7 +429,7 @@ public class WinnersTests
         foreach (var testCase in testCases)
         {
             var rng = new Random(111);
-            var (_, secondTier, thirdTier) = Winners.DrawWinners(rng, testCase.TotalTickets);
+            var (_, secondTier, thirdTier) = _winnersService.DrawWinners(rng, testCase.TotalTickets);
 
             Assert.That(secondTier.Length, Is.EqualTo(testCase.ExpectedSecondTier),
                 $"For {testCase.TotalTickets} tickets, second tier should be {testCase.ExpectedSecondTier}");

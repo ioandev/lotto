@@ -12,6 +12,7 @@ namespace BedeLotteryConsole.Services;
 public class GameService : IGameService
 {
     private readonly LottoSettings _lottoSettings;
+    private readonly IWinnersService _winnersService;
 
     private Template? _templateIntroduction;
     private Template? _templateResults;
@@ -19,9 +20,10 @@ public class GameService : IGameService
 
     private GameState? _gameState;
 
-    public GameService(IOptions<LottoSettings> lottoSettings)
+    public GameService(IOptions<LottoSettings> lottoSettings, IWinnersService winnersService)
     {
         _lottoSettings = lottoSettings.Value;
+        _winnersService = winnersService;
         _gameState = null;
     }
 
@@ -74,11 +76,11 @@ public class GameService : IGameService
             throw new InvalidOperationException("Invalid number of tickets bet.");
         }
 
-        var winnersOutput = Winners.CalculateWinners(new WinnersInput
+        var winnersOutput = _winnersService.CalculateWinners(new WinnersInput
         {
             Player1TicketsAmount = numberOfTickets,
             PlayerBalances = _gameState.PlayerBalances,
-        }, _lottoSettings, _random);
+        }, _random);
 
         if (winnersOutput is null)
         {

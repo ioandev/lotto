@@ -3,6 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using BedeLotteryConsole.Services;
 using BedeLotteryConsole.Services.Interfaces;
 using BedeLotteryConsole.Settings;
+using BedeLotteryConsole.Algos;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -30,6 +31,7 @@ public class Program
                 services.Configure<LottoSettings>(context.Configuration.GetSection("LottoSettings"));
 
                 // Register services
+                services.AddSingleton<IWinnersService, WinnersService>();
                 services.AddSingleton<IGameService, GameService>();
             });
 
