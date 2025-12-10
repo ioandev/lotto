@@ -117,27 +117,39 @@ public class GameService : IGameService
                         {
                             OrderTickets(numberOfTickets);
 
-                            Console.WriteLine();
-                            Console.WriteLine("You've chosen to order {0} tickets.", numberOfTickets);
-                            Console.WriteLine();
+                            if (!_lottoSettings.SuppressOutput)
+                            {
+                                Console.WriteLine();
+                                Console.WriteLine("You've chosen to order {0} tickets.", numberOfTickets);
+                                Console.WriteLine();
+                            }
 
                             await PrintResults();
                             _cancellationTokenSource.Cancel();
                         }
                         catch (Exception ex)
                         {
-                            Console.WriteLine(ex.Message);
+                            if (!_lottoSettings.SuppressOutput)
+                            {
+                                Console.WriteLine(ex.Message);
+                            }
                         }
                     }
                     else
                     {
-                        Console.WriteLine("Please enter a valid number of tickets.");
+                        if (!_lottoSettings.SuppressOutput)
+                        {
+                            Console.WriteLine("Please enter a valid number of tickets.");
+                        }
                     }
                 }
             }
             catch (InvalidOperationException ex)
             {
-                Console.WriteLine(ex.Message);
+                if (!_lottoSettings.SuppressOutput)
+                {
+                    Console.WriteLine(ex.Message);
+                }
             }
             catch (OperationCanceledException)
             {
@@ -159,11 +171,17 @@ public class GameService : IGameService
                 ticket_price = _lottoSettings.TicketPrice
             });
 
-            Console.WriteLine(output);
+            if (!_lottoSettings.SuppressOutput)
+            {
+                Console.WriteLine(output);
+            }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error rendering template: {ex.Message}");
+            if (!_lottoSettings.SuppressOutput)
+            {
+                Console.WriteLine($"Error rendering template: {ex.Message}");
+            }
         }
     }
 
@@ -182,11 +200,17 @@ public class GameService : IGameService
                 ticket_price = _lottoSettings.TicketPrice
             }, member => StandardMemberRenamer.Default(member));
             
-            Console.WriteLine(output);
+            if (!_lottoSettings.SuppressOutput)
+            {
+                Console.WriteLine(output);
+            }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error rendering template: {ex.Message}");
+            if (!_lottoSettings.SuppressOutput)
+            {
+                Console.WriteLine($"Error rendering template: {ex.Message}");
+            }
         }
     }
 }

@@ -19,7 +19,8 @@ public class WinnersTests
             InitialBalance = 10.0m,
             TicketPrice = 1.0m,
             MaxTicketsPerPlayers = 50,
-            MaxPlayersPerGame = 15
+            MaxPlayersPerGame = 15,
+            SuppressOutput = true
         };
         
         _winnersService = new WinnersService(Microsoft.Extensions.Options.Options.Create(_defaultSettings));

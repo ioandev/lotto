@@ -22,7 +22,8 @@ public class GameServiceTests
             InitialBalance = 10.0m,
             TicketPrice = 1.0m,
             MaxTicketsPerPlayers = 10,
-            MaxPlayersPerGame = 15
+            MaxPlayersPerGame = 15,
+            SuppressOutput = true
         };
 
         _options = Options.Create(_defaultSettings);
@@ -82,7 +83,8 @@ public class GameServiceTests
             InitialBalance = 50.0m,
             TicketPrice = 2.0m,
             MaxTicketsPerPlayers = 20,
-            MaxPlayersPerGame = 30
+            MaxPlayersPerGame = 30,
+            SuppressOutput = true
         };
         var options = Options.Create(customSettings);
         var service = new GameService(options, _mockWinnersService.Object);
@@ -156,7 +158,8 @@ public class GameServiceTests
             InitialBalance = 10.0m,
             TicketPrice = 1.0m,
             MaxTicketsPerPlayers = 1,
-            MaxPlayersPerGame = 15
+            MaxPlayersPerGame = 15,
+            SuppressOutput = true
         };
         var options = Options.Create(minSettings);
         var service = new GameService(options, _mockWinnersService.Object);
@@ -176,7 +179,8 @@ public class GameServiceTests
             InitialBalance = 100.0m,
             TicketPrice = 5.0m,
             MaxTicketsPerPlayers = 50,
-            MaxPlayersPerGame = 100
+            MaxPlayersPerGame = 100,
+            SuppressOutput = true
         };
         var options = Options.Create(maxSettings);
         var service = new GameService(options, _mockWinnersService.Object);
@@ -208,7 +212,8 @@ public class GameServiceTests
             InitialBalance = 0.0m,
             TicketPrice = 1.0m,
             MaxTicketsPerPlayers = 10,
-            MaxPlayersPerGame = 15
+            MaxPlayersPerGame = 15,
+            SuppressOutput = true
         };
         var options = Options.Create(settings);
         var service = new GameService(options, _mockWinnersService.Object);
@@ -226,7 +231,8 @@ public class GameServiceTests
             InitialBalance = 1000.0m,
             TicketPrice = 100.0m,
             MaxTicketsPerPlayers = 10,
-            MaxPlayersPerGame = 15
+            MaxPlayersPerGame = 15,
+            SuppressOutput = true
         };
         var options = Options.Create(settings);
         var service = new GameService(options, _mockWinnersService.Object);
