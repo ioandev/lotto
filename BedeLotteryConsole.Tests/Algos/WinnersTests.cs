@@ -54,26 +54,29 @@ public class WinnersTests
         // Act
         var result = Winners.CalculateWinners(input, _defaultSettings, random);
 
-        // Assert - Verify balances are calculated correctly
+        // Assert
+        Assert.That(result, Is.Not.Null, "CalculateWinners should return a result with enough tickets");
+        
+        // Verify balances are calculated correctly
         // Player 1 should have: initial - tickets_bought + winnings
-        var player1Winnings = result.LastRoundResults.PrizeResults
-            .Where(x => x.PlayerId == 1)
-            .Sum(x => x.PrizeAmount);
+        var player1Winnings = result!.LastRoundResults?.PrizeResults
+            ?.Where(x => x.PlayerId == 1)
+            .Sum(x => x.PrizeAmount) ?? 0m;
         var expectedPlayer1Balance = 50.0m - (10 * _defaultSettings.TicketPrice) + player1Winnings;
 
-        Assert.That(result.PlayerBalances[1], Is.EqualTo(expectedPlayer1Balance));
+        Assert.That(result!.PlayerBalances[1], Is.EqualTo(expectedPlayer1Balance));
         
         // Verify prize results exist
-        Assert.That(result.LastRoundResults.PrizeResults, Is.Not.Empty);
+        Assert.That(result!.LastRoundResults?.PrizeResults, Is.Not.Empty);
         
         // Verify all balances are properly calculated
         foreach (var playerId in input.PlayerBalances.Keys)
         {
             if (playerId == 1) continue; // Skip player 1, already checked
-            var cpuWinnings = result.LastRoundResults.PrizeResults
-                .Where(x => x.PlayerId == playerId)
-                .Sum(x => x.PrizeAmount);
-            Assert.That(result.PlayerBalances.ContainsKey(playerId), Is.True);
+            var cpuWinnings = result!.LastRoundResults?.PrizeResults
+                ?.Where(x => x.PlayerId == playerId)
+                .Sum(x => x.PrizeAmount) ?? 0m;
+            Assert.That(result!.PlayerBalances.ContainsKey(playerId), Is.True);
         }
     }
 
@@ -100,23 +103,24 @@ public class WinnersTests
         var result = Winners.CalculateWinners(input, _defaultSettings, random);
 
         // Assert - All CPU players should have their balances updated
-        Assert.That(result.PlayerBalances.Count, Is.EqualTo(6));
+        Assert.That(result, Is.Not.Null, "CalculateWinners should return a result with enough tickets");
+        Assert.That(result!.PlayerBalances.Count, Is.EqualTo(6));
         
         foreach (var playerId in input.PlayerBalances.Keys)
         {
             if (playerId == 1) continue; // Skip player 1
-            Assert.That(result.PlayerBalances.ContainsKey(playerId), Is.True, $"Player {playerId} should be in output");
+            Assert.That(result!.PlayerBalances.ContainsKey(playerId), Is.True, $"Player {playerId} should be in output");
             
             // Each CPU player's new balance should be: initial - tickets_bought + winnings
             var initialBalance = input.PlayerBalances[playerId];
-            var winnings = result.LastRoundResults.PrizeResults
-                .Where(x => x.PlayerId == playerId)
-                .Sum(x => x.PrizeAmount);
+            var winnings = result!.LastRoundResults?.PrizeResults
+                ?.Where(x => x.PlayerId == playerId)
+                .Sum(x => x.PrizeAmount) ?? 0m;
             
             // We need to calculate how many tickets they bought
             // This is determined by the random number generator in GetTicketsPerPlayers
             // For now, verify the balance is <= initial (they at least spent money)
-            Assert.That(result.PlayerBalances[playerId], Is.LessThanOrEqualTo(initialBalance + winnings));
+            Assert.That(result!.PlayerBalances[playerId], Is.LessThanOrEqualTo(initialBalance + winnings));
         }
     }
 
@@ -140,8 +144,9 @@ public class WinnersTests
         var result = Winners.CalculateWinners(input, _defaultSettings, random);
 
         // Assert
-        var totalPrizesAwarded = result.LastRoundResults.PrizeResults.Sum(x => x.PrizeAmount);
-        var houseProfit = result.LastRoundResults.HouseProfit;
+        Assert.That(result, Is.Not.Null);
+        var totalPrizesAwarded = result!.LastRoundResults?.PrizeResults?.Sum(x => x.PrizeAmount) ?? 0m;
+        var houseProfit = result!.LastRoundResults?.HouseProfit ?? 0m;
         
         // Total prizes + house profit should equal the total pool
         // Calculate total tickets sold
@@ -149,8 +154,8 @@ public class WinnersTests
         foreach (var playerId in input.PlayerBalances.Keys)
         {
             if (playerId == 1) continue; // Already counted player 1
-            var spent = input.PlayerBalances[playerId] - result.PlayerBalances[playerId] + 
-                       result.LastRoundResults.PrizeResults.Where(x => x.PlayerId == playerId).Sum(x => x.PrizeAmount);
+            var spent = input.PlayerBalances[playerId] - result!.PlayerBalances[playerId] + 
+                       (result!.LastRoundResults?.PrizeResults?.Where(x => x.PlayerId == playerId).Sum(x => x.PrizeAmount) ?? 0m);
             totalSpent += spent;
         }
         
@@ -177,11 +182,12 @@ public class WinnersTests
         var result = Winners.CalculateWinners(input, _defaultSettings, random);
 
         // Assert - There should be at most 1 grand prize winner
-        var grandPrizeWinners = result.LastRoundResults.PrizeResults.Where(x => x.PrizeType == PrizeType.Grand).ToList();
+        Assert.That(result, Is.Not.Null);
+        var grandPrizeWinners = result!.LastRoundResults?.PrizeResults?.Where(x => x.PrizeType == PrizeType.Grand).ToList() ?? new List<PrizeResult>();
         Assert.That(grandPrizeWinners.Count, Is.LessThanOrEqualTo(1), "Should have at most 1 grand prize winner");
         
         // All prize results should have valid prize types
-        foreach (var prize in result.LastRoundResults.PrizeResults)
+        foreach (var prize in result!.LastRoundResults?.PrizeResults ?? new List<PrizeResult>())
         {
             Assert.That(prize.PrizeType, Is.Not.EqualTo(PrizeType.Invalid));
         }
@@ -207,11 +213,13 @@ public class WinnersTests
         var result2 = Winners.CalculateWinners(input, _defaultSettings, new Random(111));
 
         // Assert - Results should be identical
-        Assert.That(result1.PlayerBalances[1], Is.EqualTo(result2.PlayerBalances[1]));
-        Assert.That(result1.PlayerBalances[2], Is.EqualTo(result2.PlayerBalances[2]));
-        Assert.That(result1.PlayerBalances[3], Is.EqualTo(result2.PlayerBalances[3]));
-        Assert.That(result1.LastRoundResults.HouseProfit, Is.EqualTo(result2.LastRoundResults.HouseProfit));
-        Assert.That(result1.LastRoundResults.PrizeResults.Count, Is.EqualTo(result2.LastRoundResults.PrizeResults.Count));
+        Assert.That(result1, Is.Not.Null);
+        Assert.That(result2, Is.Not.Null);
+        Assert.That(result1!.PlayerBalances[1], Is.EqualTo(result2!.PlayerBalances[1]));
+        Assert.That(result1!.PlayerBalances[2], Is.EqualTo(result2!.PlayerBalances[2]));
+        Assert.That(result1!.PlayerBalances[3], Is.EqualTo(result2!.PlayerBalances[3]));
+        Assert.That(result1!.LastRoundResults.HouseProfit, Is.EqualTo(result2!.LastRoundResults.HouseProfit));
+        Assert.That(result1!.LastRoundResults.PrizeResults.Count, Is.EqualTo(result2!.LastRoundResults.PrizeResults.Count));
     }
 
     [Test]
@@ -240,10 +248,11 @@ public class WinnersTests
         var result = Winners.CalculateWinners(input, _defaultSettings, random);
 
         // Assert - Player 1 balance should be unchanged (they didn't participate)
-        Assert.That(result.PlayerBalances[1], Is.EqualTo(10.0m));
+        Assert.That(result, Is.Not.Null);
+        Assert.That(result!.PlayerBalances[1], Is.EqualTo(10.0m));
         
         // Player 1 should not be in the prize results
-        var player1Prizes = result.LastRoundResults.PrizeResults.Where(x => x.PlayerId == 1).ToList();
+        var player1Prizes = result!.LastRoundResults?.PrizeResults?.Where(x => x.PlayerId == 1).ToList() ?? new List<PrizeResult>();
         Assert.That(player1Prizes, Is.Empty);
     }
 
@@ -267,7 +276,8 @@ public class WinnersTests
         var result = Winners.CalculateWinners(input, _defaultSettings, random);
 
         // Assert
-        var allWinners = result.LastRoundResults.PrizeResults.ToList();
+        Assert.That(result, Is.Not.Null);
+        var allWinners = result!.LastRoundResults?.PrizeResults?.ToList() ?? new List<PrizeResult>();
         Assert.That(allWinners, Is.Not.Empty, "There should be winners");
         
         // Verify grand prize winner exists and gets 50% of the pool
@@ -280,12 +290,12 @@ public class WinnersTests
         foreach (var playerId in input.PlayerBalances.Keys)
         {
             if (playerId == 1) continue; // Already counted player 1
-            var spent = input.PlayerBalances[playerId] - result.PlayerBalances[playerId] + 
+            var spent = input.PlayerBalances[playerId] - result!.PlayerBalances[playerId] + 
                        allWinners.Where(x => x.PlayerId == playerId).Sum(x => x.PrizeAmount);
             totalSpent += spent;
         }
         
-        Assert.That(totalPrizesAwarded + result.LastRoundResults.HouseProfit, Is.EqualTo(totalSpent).Within(0.01m));
+        Assert.That(totalPrizesAwarded + (result!.LastRoundResults?.HouseProfit ?? 0m), Is.EqualTo(totalSpent).Within(0.01m));
     }
 
     [Test]
@@ -309,7 +319,8 @@ public class WinnersTests
         var result = Winners.CalculateWinners(input, _defaultSettings, random);
 
         // Assert - No CPU player should go into negative balance
-        foreach (var kvp in result.PlayerBalances)
+        Assert.That(result, Is.Not.Null);
+        foreach (var kvp in result!.PlayerBalances)
         {
             Assert.That(kvp.Value, Is.GreaterThanOrEqualTo(0m), $"Player {kvp.Key} should not have negative balance");
         }
