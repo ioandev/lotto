@@ -16,7 +16,6 @@ public class WinnersTests
         {
             InitialBalance = 10.0m,
             TicketPrice = 1.0m,
-            Currency = "$",
             MaxTicketsPerPlayers = 50,
             MaxPlayersPerGame = 15
         };

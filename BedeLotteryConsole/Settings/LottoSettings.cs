@@ -7,5 +7,4 @@ public class LottoSettings
     public decimal TicketPrice { get; set; } = 1.0m;
     public int MaxTicketsPerPlayers { get; set; } = 10;
     public int MaxPlayersPerGame { get; set; } = 15;
-    public string Currency { get; set; } = "$";
 }
