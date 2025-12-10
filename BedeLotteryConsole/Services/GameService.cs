@@ -117,6 +117,11 @@ public class GameService : IGameService
                         try
                         {
                             OrderTickets(numberOfTickets);
+
+                            Console.WriteLine();
+                            Console.WriteLine("You've chosen to order {0} tickets.", numberOfTickets);
+                            Console.WriteLine();
+                            
                             await PrintResults();
                             _cancellationTokenSource.Cancel();
                         }
