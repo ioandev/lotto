@@ -1,6 +1,5 @@
 using BedeLotteryConsole.Models;
 using BedeLotteryConsole.Services.Interfaces;
-using BedeLotteryConsole.Algos;
 using Microsoft.Extensions.Options;
 using BedeLotteryConsole.Settings;
 using Scriban;
@@ -121,7 +120,7 @@ public class GameService : IGameService
                             Console.WriteLine();
                             Console.WriteLine("You've chosen to order {0} tickets.", numberOfTickets);
                             Console.WriteLine();
-                            
+
                             await PrintResults();
                             _cancellationTokenSource.Cancel();
                         }
