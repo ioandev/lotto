@@ -1,7 +1,6 @@
 
 using BedeLotteryConsole.Settings;
 using BedeLotteryConsole.Models;
-using BedeLotteryConsole.Exceptions;
 
 namespace BedeLotteryConsole.Algos;
 
@@ -9,7 +8,29 @@ internal static class Winners
 {
     public const int MinTicketsRequired = 11; // 1 grand + 10% (1) + 20% (2) = minimum 11 tickets
 
-    public static WinnersOutput CalculateWinners(WinnersInput input, LottoSettings lottoSettings, Random random)
+    internal static (int, int[], int[]) DrawWinners(Random rng, int totalTickets)
+    {
+        int[] ticketPool = Enumerable.Range(1, totalTickets).ToArray();
+
+        for (int i = ticketPool.Length - 1; i > 0; i--)
+        {
+            int j = rng.Next(0, i + 1);
+            (ticketPool[i], ticketPool[j]) = (ticketPool[j], ticketPool[i]); // swap
+        }
+
+        // Calculate number of tickets for each tier based on percentages
+        int secondTierCount = (int)Math.Floor(totalTickets * 0.10); // 10% of tickets
+        int thirdTierCount = (int)Math.Floor(totalTickets * 0.20);  // 20% of tickets
+
+        // Draw winners sequentially from shuffled array
+        int grandPrizeTicket = ticketPool[0];           // 1st ticket
+        int[] secondTierTickets = ticketPool[1..(1 + secondTierCount)];
+        int[] thirdTierTickets = ticketPool[(1 + secondTierCount)..(1 + secondTierCount + thirdTierCount)];
+
+        return (grandPrizeTicket, secondTierTickets, thirdTierTickets);
+    }
+
+    public static WinnersOutput? CalculateWinners(WinnersInput input, LottoSettings lottoSettings, Random random)
     {
         if (input is null)
         {
@@ -21,13 +42,10 @@ internal static class Winners
 
         if (ticketsAndPlayers.Count < MinTicketsRequired)
         {
-            if (ticketsAndPlayers.Count < MinTicketsRequired)
-            {
-                throw new NotEnoughTicketsAvailableException(MinTicketsRequired, ticketsAndPlayers.Count);
-            }
+            return null;
         }
 
-        var (grandPrizeTicket, secondTierTickets, thirdTierTickets) = FisherAtesRandomShuffler.DrawWinners(random, ticketsAndPlayers.Count);
+        var (grandPrizeTicket, secondTierTickets, thirdTierTickets) = DrawWinners(random, ticketsAndPlayers.Count);
 
         var totalPoolAmount = ticketsAndPlayers.Count * lottoSettings.TicketPrice;
         var totalGrandPrize = totalPoolAmount * 0.5m; // 50% of revenue

@@ -6,7 +6,6 @@ using BedeLotteryConsole.Services.Interfaces;
 using BedeLotteryConsole.Algos;
 using Microsoft.Extensions.Options;
 using BedeLotteryConsole.Settings;
-using BedeLotteryConsole.Exceptions;
 
 namespace BedeLotteryConsole.Services;
 
@@ -84,29 +83,13 @@ public class GameService : IGameService
 
                 _gameState.Player1TicketsAmount = betCommand.NumberOfTickets;   
 
-                try
+                var winnersOutput = Winners.CalculateWinners(new WinnersInput
                 {
-                    var winnersOutput = Winners.CalculateWinners(new WinnersInput
-                    {
-                        Player1TicketsAmount = _gameState.Player1TicketsAmount,
-                        PlayerBalances = _gameState.PlayerBalances,
-                    }, _lottoSettings, _random);
+                    Player1TicketsAmount = _gameState.Player1TicketsAmount,
+                    PlayerBalances = _gameState.PlayerBalances,
+                }, _lottoSettings, _random);
 
-                    var isGameOverBecauseBalanceIsTooLow = winnersOutput.PlayerBalances[Constants.HumanPlayerId] < _lottoSettings.TicketPrice;
-                    var isGameOverBecauseOfNotEnoughPlayers = winnersOutput.CPUPlayersTicketsCount < MinimumPlayersInTheGameToContinue;
-                    
-                    _gameState = new GameState
-                    {
-                        PlayerBalances = winnersOutput.PlayerBalances,
-                        LastRoundResults = winnersOutput.LastRoundResults,
-                        StatusType = isGameOverBecauseBalanceIsTooLow || isGameOverBecauseOfNotEnoughPlayers ? StatusType.GameOver : StatusType.ShowingResults,
-                        Player1TicketsAmount = 0,
-                        CPUPlayersTicketsAmount = winnersOutput.CPUPlayersTicketsCount
-                    };
-
-                    await UpdateStateAsync(_gameState);
-                }
-                catch (NotEnoughTicketsAvailableException)
+                if (winnersOutput is null)
                 {
                     _gameState = new GameState
                     {
@@ -117,7 +100,22 @@ public class GameService : IGameService
                     };
 
                     await UpdateStateAsync(_gameState);
+                    return;
                 }
+
+                var isGameOverBecauseBalanceIsTooLow = winnersOutput.PlayerBalances[Constants.HumanPlayerId] < _lottoSettings.TicketPrice;
+                var isGameOverBecauseOfNotEnoughPlayers = winnersOutput.CPUPlayersTicketsCount < MinimumPlayersInTheGameToContinue;
+                
+                _gameState = new GameState
+                {
+                    PlayerBalances = winnersOutput.PlayerBalances,
+                    LastRoundResults = winnersOutput.LastRoundResults,
+                    StatusType = isGameOverBecauseBalanceIsTooLow || isGameOverBecauseOfNotEnoughPlayers ? StatusType.GameOver : StatusType.ShowingResults,
+                    Player1TicketsAmount = 0,
+                    CPUPlayersTicketsAmount = winnersOutput.CPUPlayersTicketsCount
+                };
+
+                await UpdateStateAsync(_gameState);
             }
             else if (input is NextRoundCommand)
             {
