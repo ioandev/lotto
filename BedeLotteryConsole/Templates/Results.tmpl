@@ -1,0 +1,21 @@
+{{state.cpuplayers_tickets_amount ?? 0}} other CPU players also have purchased tickets.
+
+Ticket Draw Results:
+
+{{~ for prize in state.last_round_results.prize_results ~}}
+  {{~ if prize.prize_type == 1 ~}}
+* Grand Prize: Player {{ prize.player_id }}({{ prize.tickets }}) wins ${{ prize.prize_amount | math.format "0.00" }}!
+  {{~ end ~}}
+{{~ end ~}}
+{{~ second_tier = state.last_round_results.prize_results | array.filter @(do; ret $0.prize_type == 2; end) ~}}
+{{~ if second_tier.size > 0 ~}}
+* Second Tier: Players {{ for p in second_tier }}{{ p.player_id }}({{ p.tickets }}){{ if !for.last }}, {{ end }}{{ end }} win ${{ second_tier[0].prize_amount | math.format "0.00" }} per winning ticket!
+{{~ end ~}}
+{{~ third_tier = state.last_round_results.prize_results | array.filter @(do; ret $0.prize_type == 3; end) ~}}
+{{~ if third_tier.size > 0 ~}}
+* Third Tier: Players {{ for p in third_tier }}{{ p.player_id }}({{ p.tickets }}){{ if !for.last }}, {{ end }}{{ end }} win ${{ third_tier[0].prize_amount | math.format "0.00" }} per winning ticket!
+{{~ end ~}}
+
+Congratulations to the winners!
+
+House Profit: ${{ state.last_round_results.house_profit | math.format "0.00" }}

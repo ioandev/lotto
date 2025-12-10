@@ -21,7 +21,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="Templates\ConsoleTemplate.txt" />
+    <EmbeddedResource Include="Templates\Introduction.tmpl" />
+    <EmbeddedResource Include="Templates\Results.tmpl" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,35 +1,39 @@
 
 using BedeLotteryConsole.Settings;
 using BedeLotteryConsole.Models;
-using BedeLotteryConsole.Exceptions;
+using BedeLotteryConsole.Services.Interfaces;
+using Microsoft.Extensions.Options;
 
 namespace BedeLotteryConsole.Algos;
 
-internal static class Winners
+internal class WinnersService : IWinnersService
 {
-    public const int MinTicketsRequired = 11; // 1 grand + 10% (1) + 20% (2) = minimum 11 tickets
+    public const int MinTicketsRequired = 10;
+    private readonly LottoSettings _lottoSettings;
 
-    public static WinnersOutput CalculateWinners(WinnersInput input, LottoSettings lottoSettings, Random random)
+    public WinnersService(IOptions<LottoSettings> lottoSettings)
+    {
+        _lottoSettings = lottoSettings.Value;
+    }
+
+    public WinnersOutput? CalculateWinners(WinnersInput input, Random random)
     {
         if (input is null)
         {
             throw new ArgumentNullException(nameof(input));
         }
 
-        var ticketsPerPlayers = GetTicketsPerPlayersRandom(input, lottoSettings, random);
-        var ticketsAndPlayers = GetTicketsForPlayers(ticketsPerPlayers, random);
+        var ticketsPerPlayers = GetTicketsPerPlayersRandom(input, random);
+        var ticketsAndPlayers = GetTicketsForPlayers(ticketsPerPlayers);
 
         if (ticketsAndPlayers.Count < MinTicketsRequired)
         {
-            if (ticketsAndPlayers.Count < MinTicketsRequired)
-            {
-                throw new NotEnoughTicketsAvailableException(MinTicketsRequired, ticketsAndPlayers.Count);
-            }
+            return null;
         }
 
-        var (grandPrizeTicket, secondTierTickets, thirdTierTickets) = FisherAtesRandomShuffler.DrawWinners(random, ticketsAndPlayers.Count);
+        var (grandPrizeTicket, secondTierTickets, thirdTierTickets) = DrawWinners(random, ticketsAndPlayers.Count);
 
-        var totalPoolAmount = ticketsAndPlayers.Count * lottoSettings.TicketPrice;
+        var totalPoolAmount = ticketsAndPlayers.Count * _lottoSettings.TicketPrice;
         var totalGrandPrize = totalPoolAmount * 0.5m; // 50% of revenue
         var totalSecondTierPrize = totalPoolAmount * 0.3m; // 30% of revenue
         var totalThirdTierPrize = totalPoolAmount * 0.1m; // 10% of revenue
@@ -68,7 +72,7 @@ internal static class Winners
         {
             PlayerBalances = input.PlayerBalances.ToDictionary(x => x.Key, x =>
                 x.Value
-                - (ticketsPerPlayers[x.Key] * lottoSettings.TicketPrice)
+                - (ticketsPerPlayers[x.Key] * _lottoSettings.TicketPrice)
                 + (winnerAmountsBalance.ContainsKey(x.Key) ? winnerAmountsBalance[x.Key] : 0m)
             ),
             CPUPlayersTicketsCount = ticketsPerPlayers
@@ -80,21 +84,43 @@ internal static class Winners
             }
         };
     }
+    
+    public (int, int[], int[]) DrawWinners(Random rng, int totalTickets)
+    {
+        int[] ticketPool = Enumerable.Range(1, totalTickets).ToArray();
+
+        for (int i = ticketPool.Length - 1; i > 0; i--)
+        {
+            int j = rng.Next(0, i + 1);
+            (ticketPool[i], ticketPool[j]) = (ticketPool[j], ticketPool[i]); // swap
+        }
+
+        // Calculate number of tickets for each tier based on percentages
+        int secondTierCount = (int)Math.Floor(totalTickets * 0.10); // 10% of tickets
+        int thirdTierCount = (int)Math.Floor(totalTickets * 0.20);  // 20% of tickets
+
+        // Draw winners sequentially from shuffled array
+        int grandPrizeTicket = ticketPool[0];           // 1st ticket
+        int[] secondTierTickets = ticketPool[1..(1 + secondTierCount)];
+        int[] thirdTierTickets = ticketPool[(1 + secondTierCount)..(1 + secondTierCount + thirdTierCount)];
+
+        return (grandPrizeTicket, secondTierTickets, thirdTierTickets);
+    }
 
     // Automatically generated for CPU players (random)
-    private static Dictionary<int, int> GetTicketsPerPlayersRandom(WinnersInput input, LottoSettings lottoSettings, Random random)
+    private Dictionary<int, int> GetTicketsPerPlayersRandom(WinnersInput input, Random random)
     {
         var ticketsPerPlayers = 
             Enumerable.Range(2, input.PlayerBalances.Count - 1)
                 .Select(playerId => {
                     var playerBalance = input.PlayerBalances[playerId];
-                    var maxBettableTicketsAccordingToCurrentBalance = (int)(playerBalance / lottoSettings.TicketPrice);
+                    var maxBettableTicketsAccordingToCurrentBalance = (int)(playerBalance / _lottoSettings.TicketPrice);
                     if (maxBettableTicketsAccordingToCurrentBalance < 1)
                     {
                         return (PlayerId: playerId, Tickets: 0);
                     }
 
-                    var maxTicketsForThisPlayer = Math.Min(maxBettableTicketsAccordingToCurrentBalance, lottoSettings.MaxTicketsPerPlayers);
+                    var maxTicketsForThisPlayer = Math.Min(maxBettableTicketsAccordingToCurrentBalance, _lottoSettings.MaxTicketsPerPlayers);
                     return (PlayerId: playerId, Tickets: random.Next(1, maxTicketsForThisPlayer + 1));
                 })
                 .ToDictionary(x => x.PlayerId, x => x.Tickets);
@@ -103,7 +129,7 @@ internal static class Winners
         return ticketsPerPlayers;
     }
 
-    private static List<(int TicketId, int PlayerId)> GetTicketsForPlayers(Dictionary<int, int> ticketsPerPlayers, Random random)
+    private List<(int TicketId, int PlayerId)> GetTicketsForPlayers(Dictionary<int, int> ticketsPerPlayers)
     {
         var ticketId = 1;
         return ticketsPerPlayers.SelectMany(x =>
@@ -117,7 +143,7 @@ internal static class Winners
         }).ToList();
     }
 
-    private static List<(int PlayerId, decimal AmountTotal, int grandPrizeTicket, int secondTierPrizes, int thirdTierPrizes)> GetWinnerAmounts(
+    private List<(int PlayerId, decimal AmountTotal, int grandPrizeTicket, int secondTierPrizes, int thirdTierPrizes)> GetWinnerAmounts(
         List<(int TicketId, int PlayerId)> ticketsAndPlayers,
         int grandPrizeTicket,
         int[] secondTierTickets,

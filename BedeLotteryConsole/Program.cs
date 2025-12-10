@@ -1,8 +1,9 @@
 ﻿
 using System.Diagnostics.CodeAnalysis;
-using BedeLotteryConsole.Extensions;
-using BedeLotteryConsole.IO.Interfaces;
+using BedeLotteryConsole.Services;
 using BedeLotteryConsole.Services.Interfaces;
+using BedeLotteryConsole.Settings;
+using BedeLotteryConsole.Algos;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -26,21 +27,30 @@ public class Program
             })
             .ConfigureServices((context, services) =>
             {
-                services.AddApplicationServices(context.Configuration);
+                // Configure LottoSettings from appsettings.json
+                services.Configure<LottoSettings>(context.Configuration.GetSection("LottoSettings"));
+
+                // Register services
+                services.AddSingleton<IWinnersService, WinnersService>();
+                services.AddSingleton<IGameService, GameService>();
             });
 
     public static async Task RunAsync(IServiceProvider services)
     {
         var gameService = services.GetRequiredService<IGameService>();
-        var consoleIO = services.GetRequiredService<IConsoleIO>();
 
-        consoleIO.Initialize();
+        gameService.Initialize();
 
-        await gameService.InitializeAsync();
-
-        while (!gameService.AppCancellationToken.IsCancellationRequested)
+        try
         {
-            await Task.Delay(1_000, gameService.AppCancellationToken);
+            while (!gameService.AppCancellationToken.IsCancellationRequested)
+            {
+                await Task.Delay(1_000, gameService.AppCancellationToken);
+            }
+        }
+        catch(TaskCanceledException)
+        {
+            // Expected when the application is shutting down
         }
     }
 }
